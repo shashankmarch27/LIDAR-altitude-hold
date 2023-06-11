@@ -30,7 +30,9 @@ int rx_index;
 int data_lidar[9];
 int lidar_index;
 
-void initLidar(){
+void initLidar(int rx_pin = 1,int tx_pin = 0){
+  Serial1.setRX(rx_pin);
+  Serial1.setTX(tx_pin);
   Serial1.begin(BAUDRATE_LIDAR, SERIAL_8N1);
 }
 
@@ -69,7 +71,9 @@ void readLidar(){
     }
 }
 
-void initSbus(){
+void initSbus(int rx_pin = 5, int tx_pin = 4){
+  Serial2.setTX(tx_pin);
+  Serial2.setRX(rx_pin);
   Serial2.begin(BAUDRATE_SBUS, SERIAL_8E2);
 }
 
@@ -172,6 +176,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Hello");
-  delay(500);
+  readSbus();
+  Serial.println(data_recieve[2]);
 }
