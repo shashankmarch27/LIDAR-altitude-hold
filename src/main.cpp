@@ -7,6 +7,10 @@
 #define FOOTER_SBUS 0X00
 #define BAUDRATE_SBUS 100000
 
+#define KP 1
+#define KI 1
+#define KD 1
+
 bool header_detected_lidar = false;
 bool header_detected_sbus = false;
 bool frame_lost;
@@ -29,6 +33,16 @@ int rx_index;
 
 int data_lidar[9];
 int lidar_index;
+
+int current_millis;
+int previous_millis_pid;
+int previous_millis_sbus;
+
+int error;
+int prev_error;
+float proportional_value;
+float integral_value;
+float differential_value;
 
 void initLidar(int rx_pin = 1,int tx_pin = 0){
   Serial1.setRX(rx_pin);
@@ -97,44 +111,25 @@ void readSbus(){
       rx_index = 1;
       }
     }
+
+    data_recieve[0]  = (data_rx[1] | data_rx[2] << 8) & 0x07FF;
+    data_recieve[1]  = ((data_rx[2] >> 3) | (data_rx[3] << 5)) & 0x07FF;
+    data_recieve[2]  = ((data_rx[3] >> 6) | (data_rx[4] << 2) | (data_rx[5] << 10)) & 0x07FF;
+    data_recieve[3]  = ((data_rx[5] >> 1) | (data_rx[6] << 7)) & 0x07FF;
+    data_recieve[4]  = ((data_rx[6] >> 4) | (data_rx[7] << 4)) & 0x07FF;
+    data_recieve[5]  = ((data_rx[7] >> 7) | (data_rx[8] << 1) | (data_rx[9] << 9)) & 0x07FF;
+    data_recieve[6]  = ((data_rx[9] >> 2) | (data_rx[10] << 6)) & 0x07FF;
+    data_recieve[7]  = ((data_rx[10] >> 5) | (data_rx[11] << 3)) & 0x07FF;
+    data_recieve[8]  = ((data_rx[12] | (data_rx[13] << 8))) & 0x07FF;
+    data_recieve[9]  = ((data_rx[13] >> 3) | (data_rx[14] << 5)) & 0x07FF;
+    data_recieve[10] = ((data_rx[14] >> 6) | (data_rx[15] << 2) | (data_rx[16] << 10)) & 0x07FF;
+    data_recieve[11] = ((data_rx[16] >> 1) | (data_rx[17] << 7)) & 0x07FF;
+    data_recieve[12] = ((data_rx[17] >> 4) | (data_rx[18] << 4)) & 0x07FF;
+    data_recieve[13] = ((data_rx[18] >> 7) | (data_rx[19] << 1) | (data_rx[20] << 9)) & 0x07FF;
+    data_recieve[14] = ((data_rx[20] >> 2) | (data_rx[21] << 6)) & 0x07FF;
+    data_recieve[15] = ((data_rx[21] >> 5) | (data_rx[22] << 3)) & 0x07FF;
     frame_lost = (data_rx[23] & 0x04) >> 2;
     failsafe = (data_rx[23] & 0x08) >> 3;
-    if(!failsafe){
-      data_recieve[0]  = (data_rx[1] | data_rx[2] << 8) & 0x07FF;
-      data_recieve[1]  = ((data_rx[2] >> 3) | (data_rx[3] << 5)) & 0x07FF;
-      data_recieve[2]  = ((data_rx[3] >> 6) | (data_rx[4] << 2) | (data_rx[5] << 10)) & 0x07FF;
-      data_recieve[3]  = ((data_rx[5] >> 1) | (data_rx[6] << 7)) & 0x07FF;
-      data_recieve[4]  = ((data_rx[6] >> 4) | (data_rx[7] << 4)) & 0x07FF;
-      data_recieve[5]  = ((data_rx[7] >> 7) | (data_rx[8] << 1) | (data_rx[9] << 9)) & 0x07FF;
-      data_recieve[6]  = ((data_rx[9] >> 2) | (data_rx[10] << 6)) & 0x07FF;
-      data_recieve[7]  = ((data_rx[10] >> 5) | (data_rx[11] << 3)) & 0x07FF;
-      data_recieve[8]  = ((data_rx[12] | (data_rx[13] << 8))) & 0x07FF;
-      data_recieve[9]  = ((data_rx[13] >> 3) | (data_rx[14] << 5)) & 0x07FF;
-      data_recieve[10] = ((data_rx[14] >> 6) | (data_rx[15] << 2) | (data_rx[16] << 10)) & 0x07FF;
-      data_recieve[11] = ((data_rx[16] >> 1) | (data_rx[17] << 7)) & 0x07FF;
-      data_recieve[12] = ((data_rx[17] >> 4) | (data_rx[18] << 4)) & 0x07FF;
-      data_recieve[13] = ((data_rx[18] >> 7) | (data_rx[19] << 1) | (data_rx[20] << 9)) & 0x07FF;
-      data_recieve[14] = ((data_rx[20] >> 2) | (data_rx[21] << 6)) & 0x07FF;
-      data_recieve[15] = ((data_rx[21] >> 5) | (data_rx[22] << 3)) & 0x07FF;
-    }
-    else{
-      data_recieve[0]  = 992;
-      data_recieve[1]  = 992;
-      data_recieve[2]  = 150;
-      data_recieve[3]  = 992;
-      data_recieve[4]  = 992;
-      data_recieve[5]  = 992;
-      data_recieve[6]  = 992;
-      data_recieve[7]  = 992;
-      data_recieve[8]  = 992;
-      data_recieve[9]  = 0;
-      data_recieve[10] = 0;
-      data_recieve[11] = 0;
-      data_recieve[12] = 0;
-      data_recieve[13] = 0;
-      data_recieve[14] = 0;
-      data_recieve[15] = 0;
-    }
   }
 }
 
@@ -162,11 +157,24 @@ void writeSbus(){
   data_tx[20] = ((data_recieve[13] ) >> 9  | (data_recieve[14] ) << 2) & 0xFF;
   data_tx[21] = ((data_recieve[14] ) >> 6  | (data_recieve[15] ) << 5) & 0xFF;
   data_tx[22] = ((data_recieve[15] ) >> 3) & 0xFF;
+  data_tx[23] = data_rx[23];
   data_tx[24] = FOOTER_SBUS;
 
   for(int tx_index = 0; tx_index < 25;tx_index++){
-    Serial.write(data_tx[tx_index]);
+    Serial2.write(data_tx[tx_index]);
   }
+}
+
+int pidCompute(int current_value, int target_value, float kp, float ki, float kd, float time){
+  prev_error = error;
+  error = target_value - current_value;
+
+  proportional_value = kp * error * time;
+  integral_value += ki * error * time;
+  integral_value = constrain(integral_value, 0, 1023);
+  differential_value = kd * (error - prev_error) * time;
+
+  return constrain(proportional_value + integral_value + differential_value, 0, 1023);
 }
 
 void setup() {
@@ -176,6 +184,20 @@ void setup() {
 }
 
 void loop() {
+// read the sbus packed
   readSbus();
-  Serial.println(data_recieve[2]);
+
+// run pid loop at 2000hz or every 500 us
+  current_millis = micros();
+  if(current_millis - previous_millis_pid > 500){
+    previous_millis_pid = current_millis;
+    data_recieve[2] = map(pidCompute(distance, 100, KP,KI,KD,(current_millis - previous_millis_pid) * 0.000001 ), 0, 1023, 172, 1810);
+  }
+
+// send sbus packet every 6 ms otherwise fc freaks out
+  current_millis = micros();
+  if(current_millis - previous_millis_sbus > 8000 && Serial2.available()){
+    previous_millis_sbus = current_millis;
+    writeSbus();
+  }
 }
