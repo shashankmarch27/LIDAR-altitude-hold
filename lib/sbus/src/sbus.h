@@ -21,6 +21,7 @@ private:
     int data_tx[25];
     int current_millis;
     int previous_millis;
+    
 public:
     int data[16];
     bool frame_lost;
