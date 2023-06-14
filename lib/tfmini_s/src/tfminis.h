@@ -25,7 +25,7 @@ public:
     int temperature;
     int strength;
     
-    tfminis(SerialUART *port, int tx, int rx);
+    tfminis(SerialUART *port, int tx = 0, int rx = 1);
 
     void init();
     void read();

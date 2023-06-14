@@ -17,6 +17,8 @@ private:
 public:
 
     int compute(int current_value, int target_value, float kp, float ki, float kd);
+
+    void reset();
 };
 
 #endif

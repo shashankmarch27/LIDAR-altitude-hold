@@ -27,7 +27,7 @@ public:
     bool frame_lost;
     bool failsafe;
 
-    sbus(SerialUART *port, int tx, int rx);
+    sbus(SerialUART *port, int tx = 4, int rx = 5);
 
     void init();
     void read();
