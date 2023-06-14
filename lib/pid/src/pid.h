@@ -10,13 +10,13 @@ private:
     int error;
     int prev_error;
     int period;
-    float proportional_value;
-    float integral_value;
-    float differential_value;
+    double proportional_value;
+    double integral_value;
+    double differential_value;
 
 public:
 
-    int compute(int current_value, int target_value, float kp, float ki, float kd);
+    int compute(int current_value, int target_value, double kp, double ki, double kd);
 
     void reset();
 };

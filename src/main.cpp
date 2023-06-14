@@ -4,9 +4,9 @@
 #include <tfminis.h>
 #include <pid.h>
 
-#define KP 2.0
-#define KI 0.4
-#define KD 0.4
+#define KP 2.4
+#define KI 1
+#define KD 1.44 //KD = KP*KP*KI /4;
 
 sbus reciever(&Serial2);
 tfminis lidar(&Serial1);
@@ -21,23 +21,14 @@ void setup() {
 void loop() {
   reciever.read();
   if(reciever.data[6] > 1500){
+    lidar.distance = map(reciever.data[0],172,992,0,100);
     reciever.data[2] = map(throttle.compute(lidar.distance,100,KP,KI,KD),0,1023,172,1810);
   }
   else{
     throttle.reset();
   }
-  Serial.print(reciever.data[0]);
-  Serial.print("   ");
-  Serial.print(reciever.data[1]);
-  Serial.print("   ");
   Serial.print(reciever.data[2]);
   Serial.print("   ");
-  Serial.print(reciever.data[3]);
-  Serial.print("   ");
-  Serial.print(reciever.data[4]);
-  Serial.print("   ");
-  Serial.print(reciever.data[5]);
-  Serial.print("   ");
-  Serial.println(reciever.data[6]);
+  Serial.println(lidar.distance);
   reciever.write();
 }
