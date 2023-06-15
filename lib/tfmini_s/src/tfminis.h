@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#define HEADER_LIDAR 0X59
+#define HEADER_LIDAR 0x59
 #define BAUDRATE_LIDAR 115200
 
 class tfminis{
