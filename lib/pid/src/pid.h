@@ -15,6 +15,9 @@ private:
     double differential_value;
 
 public:
+    pid(int frequency){
+        period = 1000000 / frequency;
+    }
 
     int compute(int current_value, int target_value, double kp, double ki, double kd);
 
