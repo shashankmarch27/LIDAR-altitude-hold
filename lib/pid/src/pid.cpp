@@ -11,7 +11,7 @@ int pid::compute(int current_value, int target_value, double kp, double ki, doub
         proportional_value = kp * error;
         integral_value += ki * error * time;
         integral_value = constrain(integral_value, -1023, 1023);
-        differential_value = kd * (error - prev_error) * 0.001 / time;
+        differential_value = kd * (error - prev_error) / time;
     }
     return constrain(proportional_value + integral_value + differential_value, 0, 1023);
 }
