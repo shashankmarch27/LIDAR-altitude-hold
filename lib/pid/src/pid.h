@@ -11,10 +11,11 @@ private:
     int prev_error;
     int period;
     double proportional_value;
-    double integral_value;
     double differential_value;
 
 public:
+    double integral_value;
+
     pid(int frequency){
         period = 1000000 / frequency;
     }

@@ -27,8 +27,8 @@ void loop() {
   }
   else{
     throttle.reset();
+    throttle.integral_value = map(reciever.data[2],172,1810,0,1023);
   }
-
-  Serial.println(lidar.distance);
+  Serial.println(reciever.data[2]);
   reciever.write();
 }
