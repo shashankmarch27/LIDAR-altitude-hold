@@ -10,17 +10,17 @@ private:
     int error;
     int prev_error;
     int period;
-    double proportional_value;
-    double differential_value;
+    float proportional_value;
+    float differential_value;
 
 public:
-    double integral_value;
+    float integral_value;
 
     pid(int frequency){
         period = 1000000 / frequency;
     }
 
-    int compute(int current_value, int target_value, double kp, double ki, double kd);
+    int compute(int current_value, int target_value, float kp, float ki, float kd);
 
     void reset();
 };

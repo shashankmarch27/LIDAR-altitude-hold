@@ -1,6 +1,6 @@
 #include "pid.h"
 
-int pid::compute(int current_value, int target_value, double kp, double ki, double kd){
+int pid::compute(int current_value, int target_value, float kp, float ki, float kd){
     current_millis = micros();
     if(current_millis - previous_millis > period){
         float time = (current_millis - previous_millis);
