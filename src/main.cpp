@@ -44,8 +44,7 @@ void setup() {
   lidar.init();
   if(!plugged){
     File log = LittleFS.open("file.csv", "a");
-    log.printf("%f,%f,%f\n",KP,KI,KD);
-    log.printf("\n");
+    log.printf("Time , Altitude , Throttle , Kp , Ki , Kd\n");
     log.close();
   }
 }
@@ -53,14 +52,14 @@ void setup() {
 void loop() {
   reciever.read();
   lidar.read();
-  if(reciever.data[6] > 1500  && !plugged){
+  if(!plugged){
     reciever.data[2] = map(throttle.compute(lidar.distance,100,KP,KI,KD),0,1023,172,1810);
     
     current_millis = millis();
-    if(current_millis - previous_millis > 500){
+    if(current_millis - previous_millis > 5){
       previous_millis = current_millis;
       File log = LittleFS.open("file.csv", "a");
-      log.printf("%d,%d,%d\n",lidar.distance,reciever.data[2],current_millis);
+      log.printf("%d,%d,%d,%f,%f,%f\n",current_millis,lidar.distance,reciever.data[2],KP,KI,KD);
       log.close();
     }
   }
