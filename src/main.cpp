@@ -52,11 +52,11 @@ void setup() {
 void loop() {
   reciever.read();
   lidar.read();
-  if(!plugged){
+  if(reciever.data[6] > 1500  && !plugged){
     reciever.data[2] = map(throttle.compute(lidar.distance,100,KP,KI,KD),0,1023,172,1810);
     
     current_millis = millis();
-    if(current_millis - previous_millis > 5){
+    if(current_millis - previous_millis > 500){
       previous_millis = current_millis;
       File log = LittleFS.open("file.csv", "a");
       log.printf("%d,%d,%d,%f,%f,%f\n",current_millis,lidar.distance,reciever.data[2],KP,KI,KD);
