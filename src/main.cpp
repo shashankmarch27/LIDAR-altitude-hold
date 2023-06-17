@@ -30,7 +30,6 @@ void myUnplugCB(uint32_t data) {
 
 void myDeleteCB(uint32_t data) {
   LittleFS.remove("file.csv");
-
 }
 
 void setup() {
