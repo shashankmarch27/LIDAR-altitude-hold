@@ -7,9 +7,12 @@
 #include <pid.h>
 
 #define PID_FREQUENCY 2000
-#define KP 1.2
-#define KI 0.5
-#define KD 0.1
+float KP = 1.2;
+float KI = 0.5;
+float KD = 0.1;
+
+int current_millis;
+int previous_millis;
 
 bool plugged;
 
@@ -39,19 +42,26 @@ void setup() {
 
   reciever.init();
   lidar.init();
+  if(!plugged){
+    File log = LittleFS.open("file.csv", "a");
+    log.printf("%f,%f,%f\n",KP,KI,KD);
+    log.printf("\n");
+    log.close();
+  }
 }
 
 void loop() {
   reciever.read();
   lidar.read();
-  if(reciever.data[6] > 1500){
+  if(reciever.data[6] > 1500  && !plugged){
     reciever.data[2] = map(throttle.compute(lidar.distance,100,KP,KI,KD),0,1023,172,1810);
-
-    if(!plugged){
+    
+    current_millis = millis();
+    if(current_millis - previous_millis > 500){
+      previous_millis = current_millis;
       File log = LittleFS.open("file.csv", "a");
-      log.printf("%d,%d\n",lidar.distance,reciever.data[2]);
+      log.printf("%d,%d,%d\n",lidar.distance,reciever.data[2],current_millis);
       log.close();
-      delay(100);
     }
   }
   else{
