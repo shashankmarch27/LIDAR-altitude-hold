@@ -1,4 +1,4 @@
-#include <Arduino.h>
+#include <Arduino.h> 
 #include <LittleFS.h>
 #include <SingleFileDrive.h>
 
@@ -15,6 +15,9 @@ int current_millis;
 int previous_millis;
 
 bool plugged;
+bool logging;
+bool armed;
+bool header_created;
 
 sbus reciever(&Serial2);
 tfminis lidar(&Serial1);
@@ -41,17 +44,39 @@ void setup() {
 
   reciever.init();
   lidar.init();
-  if(!plugged){
-    File log = LittleFS.open("file.csv", "a");
-    log.printf("Time,Altitude,Throttle,Kp,Ki,Kd\n");
-    log.close();
-  }
 }
 
 void loop() {
   reciever.read();
   lidar.read();
-  if(reciever.data[6] > 1500  && !plugged){
+
+  // check logging switch
+  if(reciever.data[6] > 1500){
+    logging = true;
+  }
+  else{
+    logging = false;
+  }
+
+  // check arm status
+  if(reciever.data[5] > 800){
+    if(reciever.data[4] > 1500){
+      armed = true;
+    }
+  }
+  else{
+    armed = false;
+  }
+
+  if(logging && armed && !plugged){
+
+    if(!header_created){
+      File log = LittleFS.open("file.csv", "a");
+      log.printf("Time,Altitude,Throttle,Kp,Ki,Kd\n");
+      log.close();
+      header_created = true;
+    }
+
     reciever.data[2] = map(throttle.compute(lidar.distance,100,KP,KI,KD),0,1023,172,1810);
     
     current_millis = micros();
