@@ -5,22 +5,22 @@
 
 class pid{
 private:
-    int current_millis;
-    int previous_millis;
+    unsigned long current_micros;
+    unsigned long previous_micros;
     int error;
     int prev_error;
     int period;
-    float proportional_value;
-    float differential_value;
+    double proportional_value;
+    double differential_value;
 
 public:
-    float integral_value;
+    double integral_value;
 
     pid(int frequency){
         period = 1000000 / frequency;
     }
 
-    int compute(int current_value, int target_value, float kp, float ki, float kd);
+    int compute(int current_value, int target_value, double kp, double ki, double kd);
 
     void reset();
 };

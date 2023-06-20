@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-filename = 'test_log.csv'
+filename = 'E:\logFile.csv'
 
 flightLog = pd.read_csv(filename)
 time = 0.000001 * flightLog[['Time']]

@@ -1,6 +1,7 @@
 #include <Arduino.h> 
 #include <LittleFS.h>
 #include <SingleFileDrive.h>
+#include <hardware/vreg.h>
 
 #include <sbus.h>
 #include <tfminis.h>
@@ -36,6 +37,7 @@ void myDeleteCB(uint32_t data) {
 }
 
 void setup() {
+   vreg_set_voltage(VREG_VOLTAGE_1_10);
   LittleFS.begin();
   singleFileDrive.onPlug(myPlugCB);
   singleFileDrive.onUnplug(myUnplugCB);
