@@ -1,23 +1,33 @@
 #include <Arduino.h> 
 #include <LittleFS.h>
 #include <SingleFileDrive.h>
-#include <hardware/vreg.h>
 
 #include <sbus.h>
 #include <tfminis.h>
 #include <pid.h>
 
-#define PID_FREQUENCY 2000
-float KP = 1.2;
-float KI = 0.5;
+#define PID_FREQUENCY 500
+
+#define target_distance 100
+#define buffer_distance 0
+
+float KP = 3.0;
+float KI = 1.2;
 float KD = 0.1;
+
+double b_distance = 0.96;
+uint32_t distance =0;
+
+double b_throttle = 0.95;
+uint16_t throttle_prev = 0;
+
+File logFile;
 
 int current_millis;
 int previous_millis;
 
 bool plugged;
 bool logging;
-bool armed;
 bool header_created;
 
 sbus reciever(&Serial2);
@@ -26,6 +36,7 @@ pid throttle(PID_FREQUENCY);
 
 void myPlugCB(uint32_t data) {
   plugged = 1;
+  logFile.close();
 }
 
 void myUnplugCB(uint32_t data) {
@@ -37,12 +48,13 @@ void myDeleteCB(uint32_t data) {
 }
 
 void setup() {
-   vreg_set_voltage(VREG_VOLTAGE_1_10);
+  Serial.begin(9600);
+
   LittleFS.begin();
   singleFileDrive.onPlug(myPlugCB);
   singleFileDrive.onUnplug(myUnplugCB);
   singleFileDrive.onDelete(myDeleteCB);
-  singleFileDrive.begin("file.csv", "log.csv");
+  singleFileDrive.begin("file.csv", "logFile.csv");
 
   reciever.init();
   lidar.init();
@@ -57,41 +69,45 @@ void loop() {
     logging = true;
   }
   else{
-    logging = false;
+    logging = false; 
   }
 
-  // check arm status
-  if(reciever.data[5] > 800){
-    if(reciever.data[4] > 1500){
-      armed = true;
-    }
-  }
-  else{
-    armed = false;
-  }
-
-  if(logging && armed && !plugged){
+  
+  if(logging &&!plugged){
 
     if(!header_created){
-      File log = LittleFS.open("file.csv", "a");
-      log.printf("Time,Altitude,Throttle,Kp,Ki,Kd\n");
-      log.close();
+      logFile = LittleFS.open("file.csv", "a");
+      logFile.printf("Time,Altitude,Throttle,Kp,Ki,Kd\n");
       header_created = true;
     }
-
-    reciever.data[2] = map(throttle.compute(lidar.distance,100,KP,KI,KD),0,1023,172,1810);
     
-    current_millis = micros();
+    distance = b_distance*distance + (1-b_distance)*(lidar.distance);
+    if (abs(((int)distance)-target_distance) > buffer_distance)
+    {
+    reciever.data[2] =   map(throttle.compute(distance,target_distance,KP,KI,KD),0,1023,172,1810);
+    reciever.data[2] = b_throttle*throttle_prev + (1.0-b_throttle)*reciever.data[2];
+    reciever.data[2] =  constrain(reciever.data[2] , 172 , 1810);
+    throttle_prev = reciever.data[2];
+    }else{
+    reciever.data[2] =   map(throttle.compute(distance,target_distance,KP,KI,0),0,1023,172,1810);
+    reciever.data[2] = b_throttle*throttle_prev + (1.0-b_throttle)*reciever.data[2];
+    reciever.data[2] =  constrain(reciever.data[2] , 172 , 1810);
+    throttle_prev = reciever.data[2];
+    }
+    
+    current_millis = millis();
     if(current_millis - previous_millis > 500){
       previous_millis = current_millis;
-      File log = LittleFS.open("file.csv", "a");
-      log.printf("%d,%d,%d,%f,%f,%f\n",current_millis,lidar.distance,reciever.data[2],KP,KI,KD);
-      log.close();
+      logFile.printf("%d,%d,%d,%f,%f,%f\n",current_millis,distance,reciever.data[2],KP,KI,KD);
     }
   }
+
   else{
-    throttle.reset();
-    throttle.integral_value = map(reciever.data[2],172,1810,0,1023);
+    if(header_created){
+      logFile.close();
+      header_created = false;
+    }
+    throttle.reset(map(reciever.data[2],172,1810,0,1023));
   }
 
   reciever.write();

@@ -12,9 +12,9 @@ private:
     int period;
     double proportional_value;
     double differential_value;
+    double integral_value;
 
 public:
-    double integral_value;
 
     pid(int frequency){
         period = 1000000 / frequency;
@@ -22,7 +22,7 @@ public:
 
     int compute(int current_value, int target_value, double kp, double ki, double kd);
 
-    void reset();
+    void reset(int default_value = 0);
 };
 
 #endif

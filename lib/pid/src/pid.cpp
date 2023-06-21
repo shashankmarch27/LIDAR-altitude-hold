@@ -16,7 +16,8 @@ int pid::compute(int current_value, int target_value, double kp, double ki, doub
     return constrain(proportional_value + integral_value + differential_value, 0, 1023);
 }
 
-void pid::reset(){
+void pid::reset(int default_value){
+    integral_value = default_value;
     proportional_value = 0;
     differential_value = 0;
     current_micros = micros();
