@@ -36,7 +36,7 @@ bool logging = false;
 bool header_created = false;
 
 // object for sbus reciever, lidar, pid
-sbus reciever(&Serial2);
+sbus reciever(&Serial2,5,4);
 tfminis lidar(&Serial1);
 pid throttle(PID_FREQUENCY);
 
@@ -62,6 +62,7 @@ void myDeleteCB(uint32_t data) {
 }
 
 void setup() {
+  Serial.begin(9600);
   LittleFS.begin();
   singleFileDrive.onPlug(myPlugCB);
   singleFileDrive.onUnplug(myUnplugCB);
@@ -79,6 +80,7 @@ void loop() {
   reciever.read();
   // read lidar data
   lidar.read();
+  Serial.println(lidar.distance);
 
   // check logging switch
   if(reciever.data[6] > 1500){
