@@ -1,7 +1,6 @@
 #include <Arduino.h> 
 #include <LittleFS.h>
 #include <SingleFileDrive.h>
-
 #include <sbus.h>
 #include <tfminis.h>
 #include <pid.h>
@@ -34,6 +33,8 @@ int previous_millis;
 bool plugged = false;
 bool logging = false;
 bool header_created = false;
+
+sbuspacket_t packet;
 
 // object for sbus reciever, lidar, pid
 sbus reciever(&Serial2,5,4);
@@ -77,13 +78,13 @@ void setup() {
 
 void loop() {
   // read reciever data
-  reciever.read();
+  reciever.read(&packet);
   // read lidar data
   lidar.read();
   Serial.println(lidar.distance);
 
   // check logging switch
-  if(reciever.data[6] > 1500){
+  if(packet.channel6 > 1500){
     logging = true;
   }
   else{
@@ -102,22 +103,22 @@ void loop() {
       distance = b_distance*distance + (1-b_distance)*(lidar.distance);
 
       if (abs(((int)distance)-target_distance) > buffer_distance){
-        reciever.data[THROTTLE] = UINT10_TO_SBUS(throttle.compute(distance,target_distance,KP,KI,KD));
-        reciever.data[THROTTLE] = b_throttle*throttle_prev + (1.0-b_throttle)*reciever.data[2];
-        reciever.data[THROTTLE] = constrain(reciever.data[2] , 172 , 1810);
-        throttle_prev = reciever.data[2];
+        packet.channel3 = UINT10_TO_SBUS(throttle.compute(distance,target_distance,KP,KI,KD));
+        packet.channel3 = b_throttle*throttle_prev + (1.0-b_throttle)*packet.channel3;
+        packet.channel3 = constrain(packet.channel3 , 172 , 1810);
+        throttle_prev = packet.channel3;
       }
       else{
-        reciever.data[THROTTLE] = UINT10_TO_SBUS(throttle.compute(distance,target_distance,KP,KI,0));
-        reciever.data[THROTTLE] = b_throttle*throttle_prev + (1.0-b_throttle)*reciever.data[2];
-        reciever.data[THROTTLE] = constrain(reciever.data[2] , 172 , 1810);
-        throttle_prev = reciever.data[2];
+        packet.channel3 = UINT10_TO_SBUS(throttle.compute(distance,target_distance,KP,KI,0));
+        packet.channel3 = b_throttle*throttle_prev + (1.0-b_throttle)*packet.channel3;
+        packet.channel3 = constrain(packet.channel3 , 172 , 1810);
+        throttle_prev = packet.channel3;
       }
 
       current_millis = millis();
       if(current_millis - previous_millis > 500){
         previous_millis = current_millis;
-        logFile.printf("%d,%d,%d,%f,%f,%f\n",current_millis,distance,reciever.data[THROTTLE],KP,KI,KD);
+        logFile.printf("%d,%d,%d,%f,%f,%f\n",current_millis,distance,packet.channel3,KP,KI,KD);
       }
     }
   }
@@ -126,8 +127,8 @@ void loop() {
       logFile.close();
       header_created = false;
     }
-    throttle.reset(SBUS_TO_UINT10(reciever.data[THROTTLE]));
+    throttle.reset(SBUS_TO_UINT10(packet.channel3));
   }
 
-  reciever.write();
+  reciever.write(&packet);
 }
