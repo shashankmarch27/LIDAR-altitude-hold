@@ -4,3 +4,6 @@
 [submodule "lib/tfmini_s"]
 	path = lib/tfmini_s
 	url = https://github.com/shashankmarch27/tfmini_s.git
+[submodule "lib/crsf"]
+	path = lib/crsf
+	url = https://github.com/shashankmarch27/crsf.git

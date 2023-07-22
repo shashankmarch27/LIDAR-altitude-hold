@@ -2,6 +2,7 @@
 #include <LittleFS.h>
 #include <SingleFileDrive.h>
 #include <sbus.h>
+#include <crsf.h>
 #include <tfminis.h>
 #include <pid.h>
 
@@ -34,10 +35,10 @@ bool plugged = false;
 bool logging = false;
 bool header_created = false;
 
-sbuspacket_t packet;
+crsf_channels_t packet;
 
 // object for sbus reciever, lidar, pid
-sbus reciever(&Serial2,5,4);
+crsf reciever(&Serial2,5,4);
 tfminis lidar(&Serial1);
 pid throttle(PID_FREQUENCY);
 
@@ -78,13 +79,27 @@ void setup() {
 
 void loop() {
   // read reciever data
-  reciever.read(&packet);
+  reciever.read();
+  packet = reciever.getChannel();
   // read lidar data
   lidar.read();
-  Serial.println(lidar.distance);
+  Serial.print(packet.channel1);
+  Serial.print("\t");
+  Serial.print(packet.channel2);
+  Serial.print("\t");
+  Serial.print(packet.channel3);
+  Serial.print("\t");
+  Serial.print(packet.channel4);
+  Serial.print("\t");
+  Serial.print(packet.channel5);
+  Serial.print("\t");
+  Serial.print(packet.channel6);
+  Serial.print("\t");
+  Serial.print(packet.channel7);
+  Serial.println("\t");
 
   // check logging switch
-  if(packet.channel6 > 1500){
+  if(packet.channel7 > 1500){
     logging = true;
   }
   else{
@@ -130,5 +145,5 @@ void loop() {
     throttle.reset(SBUS_TO_UINT10(packet.channel3));
   }
 
-  reciever.write(&packet);
+  // reciever.write(&packet);
 }
